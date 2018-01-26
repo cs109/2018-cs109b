@@ -1,0 +1,659 @@
+---
+title: "CS109B Lab 1: Intro to R and Rstudio"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+---
+
+R/Rstudio Installation
+======================
+
+*R* Comes with
+a
+[command-line interface](https://en.wikipedia.org/wiki/Command-line_interface).
+
+There are many alternative ways to interact with the R interpreter. The most
+popular, and one we will use for this class, is [RStudio](https://rstudio.com),
+
+
+**You should use RStudio for CS109 work**. When using R outside of CS109 you may
+experiment and choose the interface you feel most comfortable with. Note that
+while R distributions for Mac and Windows include graphical user interfaces,
+these are not recommended. You must **install first *R* then *RStudio***.
+
+*R* installers and instructions for Windows, Mac, and some popular Linux systems
+are available at [https://cran.rstudio.com/](https://cran.rstudio.com/). Linux
+users should follow the instructions at 
+[https://cran.rstudio.com/bin/linux/](https://cran.rstudio.com/bin/linux/) to
+ensure that they get the most recent stable version.
+**We will be using R version 3.4.0 or greater**
+![rconsole2.png](Rconsole2.png)
+
+If you do not have the current version you wil have to re-install R from the website above. To save your downloaded packages follow instrutions
+[https://www.r-bloggers.com/upgrade-r-without-losing-your-packages/](https://cran.r-project.org/web/packages/installr/index.html).
+
+*RStudio* installers and instructions for Windows, Mac, and some popular Linux
+systems are available at
+[https://www.rstudio.com/products/rstudio/download/](https://www.rstudio.com/products/rstudio/download/).
+
+
+If a binary distribution of R is not available for your operating system, email
+me at [kathrynmckeough@g.harvard.edu](mailto:kathrynmckeough@g.harvard.edu) for assistance.
+
+Your Turn: Get to Know RStudio
+==============================
+1. Install R and Rstudio if you have not yet done so.
+2. Run the RStudio application.
+3. Examine the startup message and verify that you are running R version $\geq$ 3.4.0. 
+   If you have an older version of R go back to step 1.
+4. Use the Help menu in the RStudio application to locate the *RStudio IDE
+   Cheat-Sheet*.
+5. Use the Help menu in the RStudio application to locate the *RMarkdown Quick
+   Reference*.
+6. Open a new *R Markdown* file in RStudio. Using the *RMarkdown Quick
+   Reference* as a guide create a document with:
+   + a header
+   + a list of your favorite foods
+   + an R code block containing `print("Hello World!")`
+7. Render your R Markdown file to `.html`
+
+Solution
+----------
+
+1. Download and install from <https://cran.rstudio.com> and <https://www.rstudio.com/products/rstudio/download/>.
+2. Self explanatory.
+3. Self explanatory. 
+4. Under `Help --> Cheatsheets`
+5. Under `Help --> Markdown Quick Reference`
+6. Example:
+
+          This is a header
+          ================
+
+          # This is also a header. It doesn't look as nice as the previous one.
+
+          - Hamburger
+          - Pork ribs
+          - Apple pie
+
+          ```{r}
+          print("Hello World!")
+          ```
+
+7. Click the drop-down triangle next to `Knit` and select `Knit to HTML`.
+
+Basic R Survival Skills for Pythonistas
+=======================================
+
+*R* and *Python* are similar, a fact that will make working with R both easier
+and (in some ways) more difficult. Here are some of the basics you will need to
+survive in this brave new wo**R**ld.
+
+Interacting with the REPL
+-------------------------
+* The `> ` symbol is the default prompt. It means R is ready to receive your
+  instruction.
+* The `+ ` prompt means your previous expression was incomplete. Complete it or
+  press the *Escape* key to cancel.
+* Press the *Tab* key in the *Console* or *R Script* panes to complete object or
+  argument names.
+* Press *Control-Enter* to evaluate a line or region from an R script or
+  RMarkdown code block.
+
+Key syntax differences Between R and Python
+-------------------------------------------
+
+* Although R has an object-oriented system (actually 3 or 4 depending on what
+  you count as "object oriented"), it's not nearly as common as in Python. Most
+  R code looks like `fun(obj, arg1, arg2)` rather than `obj.fun(arg1, arg2)`.
+* R uses `{` rather than `:` and indentation to denote blocks.
+* R indexing is 1-based rather than zero-based as in Python. Negative index
+drops rather than reversing direction. See `?Extract` for details.
+* There are no construction shortcuts like `[1, 2, 3]` in Python. Use `c(1,
+2, 3)` instead. 
+* We *typically* do not modify object in-place in R. That is, most objects do not
+  have `+=`, `.append` or similar methods. In R we would use `x <- c(x, "foo")`
+  instead of `x.append("foo")` as in Python. There are exceptions to this!
+* We *typically* use `<-` rather than `=` for assignment. (They actually mean differentt things in R!)
+[https://renkun.me/2014/01/28/difference-between-assignment-operators-in-r/](https://renkun.me/2014/01/28/difference-between-assignment-operators-in-r/)
+
+
+Reading the documentation
+-------------------------
+
+* `?topic` or `help("topic")` opens the documentation for `topic`.
+* The most important arguments are usually listed first. Don't be intimidated by
+  functions with 10's of arguments, chances are only a small number are
+  required.
+* `help(package = "foo")` opens the documentation for package `foo`.
+* `example(fun)` will show you examples of `fun` usage.
+* Function documentation as well as manuals, cheat sheets, and other
+  resources can be accessed using the RStudio help menu.
+
+Package management
+------------------
+* Use the `install.packages` function rather than `pip install` or `conda
+  install`.
+* Use a package by calling `library("foo")` rather than `import
+  foo` as in Python.
+* Packages are not name-spaced in the way they are in Python. If package `foo`
+  provides function `bar` we usually call bar with `library(foo)` followed by
+  `bar()`. In the event of name collisions you can use `foo::bar()` but this is
+  not common.
+
+
+Installing Packages Used in this Course
+=======================================
+
+R comes with a default set of *core* and *recommended* packages that provide a
+wealth of data manipulation, statistics, and graphics capabilities
+out-of-the-box. If that is not enough, there are thousands of contributed R
+packages that extend R in various ways.
+
+There are two primary repositories for R packages: the [Comprehensive R Archive
+Network (CRAN)](https://cran.r-project.org/) contains statistics and
+general-purpose packages, and [Bioconductor](https://bioconductor.org) 
+contains additional bio-statistics packages. 
+
+Curated lists of CRAN packages by topic are available at
+[https://cran.r-project.org/web/views/](https://cran.r-project.org/web/views/).
+Other useful resources include [http://r-pkg.org](http://r-pkg.org) and 
+[http://rdocumentation.org](http://rdocumentation.org).
+
+Many wonderful packages exist to make your life in R easier and more fun. In
+this course we will use only a limited number of contributed packages,
+preferring in many cases to write our own code from scratch. However, we will
+use a few contributed packages that provide functionality that is a) not easily
+written from scratch and b) not available in base R. These packages include:
+
+* `ggplot2`
+* `tidyr`
+* `gam`
+
+Your Turn: Install and Test Packages
+====================================
+
+1. Open the help file for the `install.packages` function.
+2. Using the help file as a guide install the `ggplot2`, `tidyr`, and `gam`. 
+3. Load the `gam` package.
+4. Open the help page for the `gam` package.
+5. Open the help file for the `example` function.
+6. Run the examples for the `gam` function.
+7. (Advanced) Find out where your packages were installed.
+8. (Advanced) Figure out how to set your default CRAN repository to
+   `https://cran.rstudio.com`. 
+
+
+Solution 
+---------
+1. `?install.packages`
+2. `install.packages(c("ggplot2", "tidyr", "gam"))`
+3. `library(gam)`
+4. `help(package = "gam")`
+5. `?example`
+6. `example(gam)`
+7. `.libPaths()`
+8. `?Startup`, `?options`, search for "repos" option.
+
+Working with Data Structures
+============================
+
+Atomic vectors are the simplest data structure in R, and are the building blocks
+used to make more complex data structures. Vectors can be created with the `c`
+function. Each element of an atomic vector must be of the same type. Atomic
+types include *logical*, *integer* *double* and *character*.
+
+
+```{r}
+x <- c(10, 11, 12)
+y <- c("10", "11", "12")
+z <- c(TRUE, FALSE, TRUE)
+
+c(x = x, class = class(x), length = length(x))
+c(y = y, class = class(y), length = length(y))
+c(z = z, class = class(z), length = length(z))
+```
+
+Data structures in R can be converted from one type to another using one
+of the many functions beginning with `as.`. For example:
+
+```{r}
+class(x)
+class(as.character(x))
+class(y)
+class(as.numeric(y))
+```
+
+All R objects have a type (accessed with `typeof`) and length (accessed with
+`length`). They may optionally have additional attributes such as `names`.
+
+```{r}
+names(x)
+names(x) <- c("first", "second", "third")
+names(x)
+```
+
+Vector elements can be extracted and replaced using bracket notation. This works
+a little differently than it does in Python:
+
+```{r}
+x[1:2] # first and second elements
+x[-c(3, 1)] # everything except the third and first elements
+x[c("first", "third")] # first and third elements, by name
+x[x > 11] # elements of x where x is greater than 11
+
+x[1:2] <- c(0, 1) # replace first element with zero and the second element with 1
+x[c("second", "third")] <- 20 # replace second and third elements with 20 (shorter argument is recycled)
+
+```
+
+
+Dimensional data: matrices and arrays
+-------------------------------------
+
+Vectors can be arranged into dimensional structures. Here are some examples:
+
+```{r}
+m1 <- matrix(1:8, nrow = 4, dimnames = list(rows = letters[1:4], cols = c("first", "second")))
+m2 <- cbind(x = 1:4, y = 5:8)
+m3 <- rbind(1:4, 5:8)
+
+
+a1 <- array(1:8, dim = c(2, 2, 2))
+```
+
+*Matrices and arrays are just vectors with dimension*. 
+Like other vectors, all elements of an array must be of the same type.
+
+Extracting and replacing elements is similar to vectors, but operates in two
+dimensions.
+
+Recursive data structures: lists and data.frames
+------------------------------------------------
+
+Unlike atomic vectors and arrays, each element of a *list* can contain any type of
+object. Here is an example.
+
+```{r}
+l <- list(x = x, y = y, z = z, c = c, l2 = list(x, y, z))
+l
+str(l)
+```
+
+A *data.frame* is a special kind of list in which each element is the same
+length. A data.frame has two dimensions (rows and columns), with each element of
+the list forming a column.
+
+```{r}
+df <- data.frame(x = x, y = y, z = z)
+df
+str(df)
+```
+
+Extraction and replacement work similarly to vectors and matrices, with the
+addition of `[[` for extracting the contents of an element. `$` is a shortcut
+that works similarly to `[[`.
+
+```{r}
+l[1]
+l[[1]]
+l[["l2"]][[1]] == l$l2[[1]]
+
+df[1:2, 1:2]
+df[[2]]
+df$y
+```
+
+Your Turn: Play with the bands
+======================================
+
+Here is a snippet of code that creates a list containing information about three
+rock bands. 
+
+```{r}
+options(stringsAsFactors = FALSE)
+bands <- list(list(name = "The Jimi Hendrix Experience",
+                   years = 1966:1969,
+                   members = data.frame(name = c("Jimi Hendrix", "Noel Redding", "Mitch Mitchell"),
+                                        instrument = c("guitar", "bass", "drums"))),
+              list(name = "Nirvana",
+                   years = 1987:1994,
+                   members = data.frame(name = c("Kurt Cobain", "Krist Novoselic", "Dave Grohl"),
+                                        instrument = c("guitar", "bass", "drums"))),
+              list(name = "The White Stripes",
+                   years = 1997:2011,
+                   members = data.frame(name = c("Jack White", "Meg White"),
+                                        instrument = c("guitar", "oreos"))))
+```
+
+1. Extract the `years` element of the second band in the list.
+   * What class is it (integer, numeric, logical ...)?
+   * How many years was the band active?
+2. Extract the name of the bass player in the second band.
+3. Meg White played drums in the band "The White Stripes" (the third band in the
+   list). Correct the data to reflect this fact.
+4. (Advanced) Combine all three `members` elements into a single data.frame.
+5. (Advanced) Sort the combined data.frame by `instrument`. Break any ties by
+   sorting by `name`.
+
+Solution 
+---------
+
+1.  `b2years <- bands[[2]][["years"]]`
+   * `class(b2years)` or `typeof(b2years)`
+   * `length(b2years)`
+2. Easy way: `bands[[2]][["members"]][["name"]][[2]]`
+   More complicated but safer:
+   `b2members <- bands[[2]][["members"]]` 
+   `b2members[["name"]][b2members[["instrument"]] == "bass"]`
+3. `bands[[3]][["members"]][["instrument"]][[2]] <- "drums"`
+4. `members <- do.call(rbind, lapply(bands, `[[`, i = "members"))`
+5. `members <- members[order(members[["instrument"]], members[["name"]]), ]`
+
+Data IO
+==========
+
+The "working directory", files and folders
+------------------------------------------
+
+R knows the directory it was started in, and refers to this as the
+"working directory". You can get and set the working directory with `getwd()`
+and `setwd()` respectively.
+
+R also has functions for basic file and directory manipulation, such as
+`list.files()`, `dir.create()`, and `file.rename()`. You can download files
+using the `download.files()` function.
+
+Reading data files
+------------------
+
+R includes several utilities for reading text files. You can read a file
+line-by-line with the `readLines()` function, and you can read delimited data
+using the `read.table()` function. There are several connivance wrappers around
+`read.table()` for reading common delimited file types, including `read.csv()`
+for reading `.csv` files, and `read.delim()` for reading tab separated files.
+
+Several packages provide readers for other file types. An overview of readers
+for common statistical data formats is displayed in the table below.
+
+  data type                 function         package
+  ------------------------- ---------------  -----------------------------------------------------
+  comma separated (.csv)    `read.csv()`     utils (comes with R)
+                            `read_csv()`     readr (tidyverse)
+  other delimited formats   `read.table()`   utils
+                            `read_delim()`   readr
+  R (.Rds)                  `readRDS()`      base (comes with R)
+                            `read_rds()`     readr
+  Stata (.dta)              `read.dta()`     foreign (comes with R, must be attached separately) 
+                            `read_stata()`   haven (tidyverse, needs to be attached separately)
+  SPSS (.sav)               `read.spss()`    foreign
+                            `read_spss()`    haven
+  SAS (.sas7bdat)           `read_sas()`     haven
+  Excel (.xls, .xlsx)       `read_excel()`   readxl (tidyverse, needs to be attached separately)
+  large text table          `fread()`        data.table
+
+
+Your Turn: Read and inspect data
+================================
+
+1. Using R, create a directory named `lab0data`.
+2. Using R, download the file at
+   `http://tutorials.iq.harvard.edu/example_data/hp1602.csv` to your
+   `lab0data` directory. Name the file "housingPriceIndex2016.csv". 
+3. Read the data into R, assigning the result to the name `housing`.
+4. (Advanced) The `.csv` file above was extracted from the Excel file at
+   `https://www.dallasfed.org/institute/houseprice/~/media/documents/institute/houseprice/hp1602.xlsx`
+   Use R to download this file.
+5. (Advanced) Open the file downloaded in step 4 in a spreadsheet application
+   and determine what needs to be done to read it into R. For example, which
+   sheet should be read? Do you need to skip some rows?
+6. (Advanced) Read the data downloaded in step 4 into R. 
+
+
+Solution 
+-----------
+1. `dir.create("lab0data")`
+2. `download.file("http://tutorials.iq.harvard.edu/example_data/hp1602.csv", "lab0data/housingPriceIndex2016.csv")`
+3. `housing <- read.csv("lab0data/housingPriceIndex2016.csv")`
+4. `download.file("https://www.dallasfed.org/institute/houseprice/~/media/documents/institute/houseprice/hp1602.xlsx", "lab0data/hp1602.xlsx")`
+5. We want to read the sheet named "HPI". The second row is blank, but we don't want to skip it because we need the headers.
+6. Nothing in base R will reliably read excel files, so we need to use a contributed package
+   `install.packages("readxl")`
+   `library("readxl")`
+   `hp1602 <- read_excel("lab0data/hp1602.xlsx", sheet = "HPI")`
+   
+Basic statistics and math
+=========================
+
+R has all the basic math operators you would expect, and quite a bit of
+statistics functionality out of the box. The names are not always consistent
+(e.g., `mean` is fully spelled out, while standard deviation is abbreviated
+`sd`, `t.test` separates terms with a dot while `findInterval` uses camalCase,
+but tab-completion helps with that.
+
+See `?Arithmetic` for unary and binary operators (pretty standard), and
+`help(package = "base")` and `help(package = "stats")` for other basic math and
+statistics functions. 
+
+Iteration
+=========
+
+There are two basic approaches to iteration in R; *loops* and **apply*. 
+
+Loops are similar to their Python counterparts, but there are some syntax
+differences. Let's use a loop to calculate the variance of each column in the
+`housing` data we read in earlier.
+
+```{r, echo = FALSE, include = FALSE}
+housing <- readr::read_csv("http://tutorials.iq.harvard.edu/example_data/hp1602.csv")
+```
+
+```{r}
+for (col in housing[, -(1:3)]) {
+  print(var(col))
+}
+
+```
+
+This is pretty straight-forward. Now suppose that rather than printing the
+result we want to assign it to a vector:
+
+```{r}
+housingVar <- c()
+for (col in housing[, -(1:3)]) {
+  housingVar <- c(housingVar, mean(col))
+}
+```
+
+This is not too bad, but many people find an `sapply` version more readable:
+
+```{r}
+housingVar <- sapply(housing[, -(1:3)], var)
+```
+
+`sapply` is similar to *map* in python.
+
+Split, Apply and Combine
+------------------------
+
+When you are performing a repetative task on a large data set you should think in terms of these three steps:
+
+1. Split your dataset into meaningful chunks
+2. Apply function of interest to division
+3. Combine results into new object
+
+The functions `**ply` package `plyr` is very helpful for these scenarios. The first character can be `a`, `d`, or `l` for array, data frame or lists and the second can be  `a`,`d`,`l`, or `_` for drop.
+
+You Turn: Housing stats
+=======================
+
+1. Calculate the average Housing Price Index (HPI) for the US.
+2. Calculate the average HPI for Canada.
+3. Calculate the correlation between HPI in the US and HPI in Canada.
+4. Calculate the correlations among HPI in all available countries.
+5. (Advanced) Using the Split, Apply, Combine technique create a table showing the yearly average HPI for US and Canada.
+
+
+
+Solution 
+----------
+1. `mean(housing[["US"]])`
+2. `mean(housing[["Canada"]])`
+3. `cor(housing[c("US", "Canada")])`
+4. `cor(housing[-c(1, 2, 3)])`
+5. Example using base R
+```{r}
+housing<-data.frame(housing) #mean only works with numeric, not double
+#split
+year.split<-split(housing[,c('US','Canada')],housing$year)
+#apply & combine
+avg.hpi.1<-sapply(year.split,function(x){
+  x.avg<-apply(x,2,mean)
+  return(x.avg)
+})
+```
+Example using plyr package
+```{r}
+library(plyr)
+#split, apply & combine
+avg.hpi.2<-daply(housing,.(year),function(x){
+  x.avg<-apply(x[,c('US','Canada')],2,mean)
+  return(x.avg)
+})
+```
+
+
+Basic plotting
+==============
+
+Base R comes with a full suite of graphics capabilities. The entry point is
+usually the `plot()` function, perhaps followed by calls to `points()`,
+`lines()` etc. It looks like this:
+
+```{r}
+plot(Canada ~ time, data = housing,
+     type = "l", col = "red")
+lines(US ~ time, col = "blue", data = housing)
+legend(1980, 190, legend = c("Canada", "USA"), lty = 1, col = c("red", "blue"))
+```
+
+That's not too bad, and the system in general is very flexible. It is however
+pretty low level. Over the last 10 years or so the `ggplot2` package has become
+the preferred graphics system for many useRs, and it is the system we will use
+in this class.
+
+The `ggplot()` version of the graph above looks like this:
+
+```{r}
+library(ggplot2)
+theme_set(theme_classic())
+
+ggplot(housing, mapping = aes(x = time)) +
+  geom_line(mapping = aes(y = Canada, color = "Canada")) +
+  geom_line(mapping = aes(y = US, color = "US"))
+```
+
+The main advantages are a) inheritance so we don't have to specify the same
+parameters multiple times and b) automatic construction of the legend.
+
+The most important advantage of the *ggplot* system isn't yet apparent in the
+plot we made above. For that we need to normalize or "tidy" our data into a form
+with one column per variable and one row per observation. There are various ways
+to do this in R; the `gather_()` function in the *tidyr* package is popular
+and easy.
+
+```{r}
+library(tidyr)
+housing.l <- gather_(housing,
+                     key_col = "country",
+                     value_col = "hpi",
+                     gather_cols = names(housing)[-(1:3)])
+
+head(housing.l)
+```
+
+Now that the data has been arranged into a more friendly form, we can map
+country to color directly.
+
+```{r}
+ggplot(housing.l[housing.l$country %in% c("Canada", "US"), ],
+       mapping = aes(x = time, y = hpi)) +
+  geom_line(mapping = aes(y = hpi, color = country))
+```
+
+This makes the graph easy to reason about and easy to extend:
+
+```{r}
+ggplot(housing.l[housing.l$country %in% c("Canada", "US", "UK", "Japan"), ],
+       mapping = aes(x = time, y = hpi, shape = country, color = country)) +
+  geom_point() +
+  geom_line()
+```
+
+Writing your own functions
+==========================
+
+Defining functions in R is relatively easy. Writing functions is useful both as
+a way of avoiding encapsulating frequently used code, and because you sometimes
+need to pass a function as an argument to other functions.
+
+As a example of the second case, we can use a *split-apply* strategy to
+calculate average hdi year, like this:
+
+```{r}
+sapply(split(housing.l$hpi, housing.l[c("year")]), mean)
+```
+
+but what if we want to calculate both means and standard deviations? There is no
+function that does that, but we need to pass a function to `sapply`. So we
+create one, like this:
+
+```{r}
+meansd <- function(x) {
+    xm <- mean(x)
+    xsd <- sd(x)
+    c(mean = xm, sd = xsd)
+}
+
+sapply(split(housing.l$hpi, housing.l[c("year")]), meansd)
+```
+Here are some things to keep in mind when writing functions in R.
+
+- Be careful not to use the same name as an existing function or you will silently over-write it.
+- The return value is the value of the last evaluated expression.
+- Your function can only return one "thing"; if you want to return multiple things put them in a vector or list.
+- Arguments can have default values; these can be functions of other arguments.
+
+
+
+Your turn: More housing stats
+=============================
+
+1. Write a function that returns a named vector containing the *min* *median* and *max* of its argument.
+2. Use your function to calculate the minimum, median, and maximum of HDI in the US
+3. Iterate, using your function to calculate the minimum, median, and maximum of HDI for all countries.
+4. (Advanced) Graph the median HDI across time.
+5. (Advanced) Graph the min, median, and max HDI across time.
+
+
+Solution
+------------------
+1. `mm <- function(x) c(min = min(x), max = max(x))`
+2. `mm(housing[["US"]])`
+3. `sapply(housing[-c(1, 2, 3)], mm)`
+4. 
+   `medians <- sapply(split(housing.l[["hpi"]], housing.l[["time"]]),  median)`
+   `medians <- data.frame(time = as.numeric(names(medians)), med.hpi = medians)`
+   `ggplot(medians, aes(x = time, y = med.hpi)) + geom_line()`
+5.
+   `mmm <- sapply(split(housing.l[["hpi"]], housing.l[["time"]]),  function(x) c(min = min(x), med = median(x), max = max(x)))`
+   `mmm <- as.data.frame(t(mmm))`
+   `mmm[["time"]] <- as.numeric(rownames(mmm))`
+   `library(tidyr)`
+   `mmm <- gather_(mmm, key_col = "stat", value_col = "value", gather_cols = c("min", "med", "max")) `
+   `ggplot(mmm, aes(x = time, y = value, color = stat)) + geom_line()`
+
