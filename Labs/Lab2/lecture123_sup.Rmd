@@ -1,0 +1,83 @@
+---
+title: "Lecture 123 Supplement"
+author: "Katy McKeough"
+date: "1/31/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Gam in Action
+
+```{r cars}
+library(gam)
+data(kyphosis)
+?kyphosis
+```
+
+General Additive Models allow us to model binary variables. Let us model the response variable *Kyphosis* which indicates whether or not the condition is present or not. Use *Age*, *Number* and *Start* as predictor variables.
+
+```{r pressure}
+kyph1.gam = gam(Kyphosis ~ s(Age) + s(Number) + s(Start),
+  family=binomial, data=kyphosis)
+print(summary(kyph1.gam))
+
+par(mfrow=c(1,3))
+plot(kyph1.gam, resid=T, se=T, rug=F, pch=19, col="red")
+```
+
+Perform a likelihood ratio test against the model with no terms. Is incorporating the three variables better than nothing?
+
+```{r}
+kyph0.gam = gam(Kyphosis ~ 1,
+  family=binomial, data=kyphosis)
+
+print(anova(kyph0.gam,kyph1.gam,test='Chi'))
+
+```
+
+
+It appears individual effects are not significant in presence of others. Remove Number and re fit the model
+
+```{r}
+kyph2.gam = gam(Kyphosis ~ s(Age) + s(Start),
+  family=binomial, data=kyphosis)
+print(summary(kyph2.gam))
+
+par(mfrow=c(1,2))
+plot(kyph2.gam, rug=T, se=T)
+
+```
+
+Visualy, t is clear that the response does not behave linearly in terms of these predictors. Here we fit the corresponding GLM and test the comparison to the GAM.
+
+```{r}
+kyph2.glm = glm(Kyphosis ~ Age + Start,
+  family=binomial, data=kyphosis)
+print(anova(kyph2.glm,kyph2.gam,test="Chi"))
+```
+
+We can use GAMs for prediction the same as we have done before:
+
+```{r}
+kyph.new = data.frame(Age = c(84,85,86), Start=c(7,8,9))
+print(predict(kyph2.gam,kyph.new,type="response"))
+```
+
+
+Another use of GAM is to transform predictors for use in linear models. Based on the plots for *Age* and *Start* it makes sense to include quadratic terms.
+```{r}
+kyphosis$Age.sq = (kyphosis$Age - mean(kyphosis$Age))^2
+kyphosis$Start.sq = (kyphosis$Start - mean(kyphosis$Start))^2
+kyph3.glm = glm(Kyphosis ~ Age + Start + Age.sq + Start.sq,
+  family=binomial, data=kyphosis)
+
+print(summary(kyph3.glm))
+
+print(anova(kyph2.glm,kyph3.glm,test="Chi"))
+```
+
+
+
