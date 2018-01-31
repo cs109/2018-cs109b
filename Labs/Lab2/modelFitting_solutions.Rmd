@@ -1,0 +1,870 @@
+---
+title: "CS109 Lab 2: Model fitting"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+---
+
+R provides functions for fitting linear (`lm`) and generalized linear
+models (`glm`), local polynomial regression models (`loess`), and
+nonlinear least squares (`nls`) among others. Functions for fitting
+many other kinds of models are available in various R packages.
+
+Formula
+=======
+
+What most of these model fitting functions have in common is a way of
+specifying relationships among variables in the model in terms of a
+*formula*. A formula is usually defined using the tilde operator
+(`~`), with the response on the left and predictors on the right.
+
+Thinking of the formula operator as a domain-specific language is
+helpful, because many things work differently inside a formula than
+they do in the rest of R. For example:
+
+- outside of a formula, `+` means "addition", but inside a formula `+`
+  means "inclusion"
+- outside of a formula ":" is a sequence operator, but inside a
+  formula it means "interaction"
+- outside a formula `(a + b + c)^2` means "square the sum of a, b, and
+  c"; inside a formula it means "include a, b, c, and all two-way
+  interactions between them"
+
+Note that you can escape to the usual meaning with the `I` function:
+`I((a + b + c)^2)` means "square the sum of a, b, and c, even if
+inside a formula.
+
+
+More details on the formula interface are described in the help page
+(`?formula`).
+
+
+Model fitting examples
+----------------------
+
+R comes with some built-in data sets that can be used for examples and
+demos. You can ask for the list of available data sets by calling
+`data()`. Here we will use the built-in *mtcars* data set.
+
+```{r}
+data(mtcars)
+str(mtcars)
+?mtcars
+```
+
+Fit a simple linear model predicting *miles per gallon* (`mpg`) from
+*horsepower* (`hp`) and *weight* (`wt`).
+
+```{r}
+lm(mpg ~ hp + wt, data = mtcars)
+```
+
+Add interaction between `hp` and `wt`.
+
+```{r}
+lm(mpg ~ hp * wt, data = mtcars)
+```
+
+
+Add interactions between `hp` and *automatic transmission* (`am`), and
+between `wt` and `am`.
+
+
+```{r}
+lm(mpg ~ (hp + wt) * am, data = mtcars)
+```
+
+
+
+Types, Classes and methods (lm, predict, resid)
+===============================================
+
+We've seen how to use *formula* in R to fit linear models, but you may
+have been somewhat underwhelmed by the result. `lm` returns simply the
+*Call* that produced it, and the regression coefficients. To do
+anything useful with these models we will want to assign them to a
+name and then do some post-estimation calculations. In order to do
+that we need to know what `lm` returns, and what methods exist for it.
+Most of this is documented in `?lm`, but we can use R to inspect the
+result and learn for ourselves.
+
+Objects produced by `lm` are named *lists*, and can be treated just
+like any other list in R. Let's simplify our last example model and
+take a closer look.
+
+```{r}
+mod.mpg1 <- lm(mpg ~ wt * am, data = mtcars)
+
+typeof(mod.mpg1)
+length(mod.mpg1)
+names(mod.mpg1)
+
+mod.mpg1[["coefficients"]]
+```
+
+Since `mod.mpg1` is a list, we can do anything with it that we can do
+with other lists in R. For example, we can extract elements by
+position or name:
+
+```{r}
+mod.mpg1[["coefficients"]]
+```
+
+```{r}
+hist(mod.mpg1[[2]])
+```
+
+Unlike other lists in R, lists produced by `lm` are of *class* `lm`.
+There are functions with methods that correspond to this class, and we
+can ask R to tell us what those functions are using the `methods`
+function.
+
+```{r}
+class(mod.mpg1)
+methods(class = class(mod.mpg1))
+```
+
+We now know that there are `summary`, `anova`, and `confint` methods
+(among others) for objects of class `lm`. That is, we know that we can
+do the following:
+
+```{r}
+summary(mod.mpg1)
+anova(mod.mpg1)
+confint(mod.mpg1)
+```
+
+**Note** In Python the equivalent of `summary(mod.mpg1)` would
+probably look like `mod.mpg1.summary()`. This *object-oriented* style
+does exist in R (though it uses `$` instead of `.` to access methods),
+but it is not commonly used.
+
+This technique of identifying the *class* of an R object, and then
+looking up which generic functions have corresponding *methods* is
+very useful. Remember thought that it only shows you functions that
+have specific methods; for example `methods(class = class(mod.mpg1))`
+did not show us a method for `[[`, but we know that we can use bracket
+extraction on a *lm* object. That just means that `[[` doesn't do
+anything special because of the object's class -- it just treats it
+like any other list.
+
+We can also go the other way around, and ask R what methods exist for
+a specific generic function. For example,
+
+```{r}
+methods(summary)
+```
+
+shows us all the different object classes that have `summary` methods.
+
+Most modeling functions in R usually return objects with at least
+`summary`, `print`, and `predict` methods. The `predict` methods are
+useful for visualizing the quality of your model. Once you've
+calculated predicted values you can use the `plot` or `ggplot`
+functions to construct a graph. Let's use `ggplot` to visualize the
+predictions from our last model.
+
+```{r}
+## install.packages("ggplot2") # uncomment and run if not already installed.
+library(ggplot2)
+
+mtc <- transform(mtcars, pred.mpg = predict(mod.mpg1, interval = "confidence"))
+mtc <- mtc[order(mtc$wt), ]
+                 
+ggplot(mtc,
+       mapping = aes(x = wt, y = mpg, color = as.factor(am))) +
+    geom_point() +
+    geom_smooth(mapping = aes(y = pred.mpg.fit,
+                              ymin = pred.mpg.lwr,
+                              ymax = pred.mpg.upr),
+                stat = "identity")
+```
+
+Your turn: Get to know *lm* 
+=====================================
+   
+1. Fit a linear model predicting *miles per gallon* (`mpg`) from
+   number of cylinders (`cyl`), *displacement* (`disp`), *horsepower*
+   (`hp`), and all two-way interactions among these three predictors.
+   Do _not_ include the three way interaction.
+   
+```{r}
+lm(mpg ~ (cyl + hp + disp)^2, data = mtcars)
+```   
+   
+2. Number of cylinders and displacement are so highly correlated that
+   it makes sense to think of them both as measures of *engine size*.
+   Fit a model predicting mpg from the sum of `cyl` and `disp`.
+   
+```{r}
+lm(mpg ~ I(cyl + disp), data = mtcars)
+```
+   
+
+3. Fit a model predicting `mpg` from `disp`, assigning the result to
+   the name `mod.mpg`. Get the `summary` of the model and assign the result to the name
+   `mod.mpg.sum`.
+   
+```{r}
+mod.mpg <- lm(mpg ~ disp, data = mtcars)
+mod.mpg.sum <- summary(mod.mpg)
+mod.mpg.sum
+```
+
+
+4. Extract the `r.squared` value from `mod.mpg.sum`.
+
+```{r}
+mod.mpg.sum[["r.squared"]]
+```
+
+5. Graph the observed and predicted values of `mpg` as a function of
+   `disp` based on your model.
+   
+```{r}
+library(ggplot2)
+mtc <- transform(mtcars, pred.mpg = predict(mod.mpg))
+
+ggplot(mtc, aes(x = disp, y = mpg)) +
+  geom_point() +
+  geom_line(aes(y = pred.mpg))
+```
+
+   
+6. (Advanced) Fit a logistic model predicting *automatic vs.
+   manual transmission* (`am`) from *displacement* (`disp`). (Hint: use `glm`)
+   
+```{r}
+mod.am <- glm(am ~ disp, data = mtcars, family = binomial())
+summary(mod.am)
+```
+
+7. (Advanced) Fit a logistic model predicting *automatic vs.
+   manual transmission* (`am`) from *displacement* (`disp`) and
+   *number of gears* (`gear`). Treat gear as an ordered factor and use
+   polynomial contrasts.
+
+```{r}
+mtc <- mtcars
+mtc$gear <- factor(mtc$gear, ordered = TRUE)
+mod.am2 <- glm(am ~ disp + gear, 
+              data = mtc, 
+              family = binomial(),
+              contrasts = list(gear = "contr.poly"))
+summary(mod.am2)
+```
+
+8. (Advanced) Inference from linear regression models is based on
+   several assumptions, including the assumption that the residuals
+   are normally distributed. Visually inspect your model to determine
+   if this assumption has been violated.
+   
+```{r}
+hist(resid(mod.mpg))
+```
+
+9. (Advanced) Add `am` and the interaction between `disp` and `am` to
+   your model. What is the regression coefficient for `mpg` on `disp`
+   when `am = 0`? When `am = 1`?
+
+```{r}
+mod.mpg <- lm(mpg ~ disp*am, data = mtcars)
+summary(mod.mpg)
+## when am = 0, mpg decreases by 0.028 for every one unit increase in disp.
+## when am = 1, mpg descreases by 0.028 + 0.031 = 0.059 for every one unit increase in disp.
+```
+
+Transformations (Polynomials and Splines)
+=========================================
+ 
+The R *formula* provides a way to specify relationships among
+variables, and among *transformations* of those variables. We've
+already seen that `*` transforms the inputs by including both the
+specified variables and their product. Many other transformations are
+possible. Indeed, for categorical predictors transformation is
+mandatory and happens by default; R will transform categorical
+predictors into a matrix of indicators or dummy codes with the first
+level as the reference group.
+
+In general, any transformation that returns a vector of length equal
+to the number of rows in the data or a matrix with the same row
+dimension as the input data is legal. 
+
+
+Standardized regression coefficients
+-----------------------
+
+A example of transformation is the `scale` function, which
+standardizes it's first argument by subtracting the mean and dividing
+by the standard deviation of each column seperately:
+
+```{r}
+str(mtcars[c("hp", "wt")])
+str(scale(mtcars[c("hp", "wt")]))
+```
+
+Thus if we want standardized regression coefficients we can fit our
+model as follows:
+
+
+```{r}
+mod.mpg2 <- lm(mpg ~ scale(cbind(hp = hp, wt = wt)) * am, data = mtcars)
+summary(mod.mpg2)
+```
+
+Polynomials
+-----------
+
+If we want polynomial terms we can generate them ourselves, or use the
+`poly` function to do it for us.
+
+```{r}
+summary(lm(mpg ~ disp + I(disp^2) + I(disp^3), data = mtcars))
+summary(lm(mpg ~ poly(disp, degree = 3, raw = TRUE), data = mtcars))
+```
+
+Splines
+-------
+
+Similarly, we can use the `bs` function from the `splines` package to
+generate piece-wise polynomials. You can specify either `df` or you
+can specify `knots` directly (in which case `ns` will choose `df - 1 -
+intercept` knots at suitable intervals).
+
+```{r}
+library(splines)
+mod.mpg4 <- lm(mpg ~ bs(disp, knots = quantile(disp, c(.25, .50, .75))),
+               data = mtcars)
+summary(mod.mpg4)
+```
+
+Again there is nothing magical about splines, they are basically
+piece-wise polynomials. We can calculate a quick-and-dirty version
+ourselves without too much trouble:
+
+```{r}
+disp.qtl <- quantile(mtcars$disp, c(.25, .50, .75))
+mod.bs.manual <- predict(lm(mpg ~ disp + 
+                              I(disp^2) + 
+                              I(disp^3) +
+                              ifelse(disp > disp.qtl[1], 
+                                     (disp - disp.qtl[1])^3, 
+                                     0) +
+                              ifelse(disp > disp.qtl[2], 
+                                     (disp - disp.qtl[2])^3, 
+                                     0) +
+                              ifelse(disp > disp.qtl[3], 
+                                     (disp - disp.qtl[3])^3, 
+                                     0),
+                            data = mtcars))
+
+## our quick-and-dirty spline captures the same information as those
+## generated by the bs function:
+
+all.equal(mod.bs.manual, predict(mod.mpg4))
+
+## although, it is not scaled or parameterized exactly the same.
+```
+
+Finally, we can construct natural cubic splines using the `ns`
+function. As with `bs` you can specify either `df` or you can specify
+`knots` directly.
+
+-----------------
+
+What all of these transformation functions (i.e., `scale`, `poly`,
+`bs`, `ns`) have in common is that they take a variable as input and
+return a matrix where the row dimension is equal to the length of the
+input variable. When called inside a `formula` of a modeling function
+(e.g., `lm`) the generated matrix will be used in the right-hand-side
+of the equation.
+
+
+Your turn: Visualizing polynomial and spline regressions
+========================================================
+1. Predict `mpg` from `hp` using a *natural spline* (`ns`) with `df =
+   3`.
+   
+```{r}
+mod.mpg.ns3 <- lm(mpg ~ ns(hp, df = 3), data = mtcars)
+summary(mod.mpg.ns3)
+```
+
+2. Predict `mpg` from `hp` using a *natural spline* with `df = 8`.
+
+```{r}
+mod.mpg.ns8 <- lm(mpg ~ ns(hp, df = 8), data = mtcars)
+summary(mod.mpg.ns8)
+```
+
+3. Plot the predictions from these two models.
+
+```{r}
+### You Fill in Predictions here
+mtcars$mpg.ns3 <- predict(mod.mpg.ns3)
+mtcars$mpg.ns8 <- predict(mod.mpg.ns8)
+
+
+### Plot:
+ggplot(mtcars, aes(x = hp, y = mpg)) +
+  geom_point() +
+  geom_line(aes(y = mpg.ns3,color='red'))+
+  geom_line(aes(y = mpg.ns8,color='blue'))
+```
+
+
+4. (Advanced) Refit the `df=3` model, adding an interaction with `am`.
+   Plot the predictions, coloring by `am`.
+
+```{r}
+mod.mpg.ns3.by.am <- lm(mpg ~ bs(hp, 3) * am, data = mtcars)
+
+ggplot(data = transform(mtcars, 
+                 pred.mpg = predict(mod.mpg.ns3.by.am),
+                 am = factor(am)),
+       mapping = aes(x = hp, y = mpg, color = am)) +
+  geom_point() +
+  geom_line(mapping = aes(y = pred.mpg))
+```
+
+Selecting parameter values
+==========================
+
+Once we start fitting models with polynomials or splines, we will
+quickly realize that we need a way to choose the optimal parameters.
+What degree polynomial should we use? How many degrees of freedom in
+our basis-splines?
+
+A simple answer is to choose a measure of model fit, test out a range
+of parameters, and see which one fits the best. That makes sense, but
+be careful not to over-fit the model. In other words, you want you
+model to capture generalizable patterns, and *not* to capture noise in
+the sample you happen to have.
+
+Basic cross-validation
+----------------------
+
+There are several approaches to avoiding over-fitting, with
+cross-validation being a simple and common method. Here are the basic
+steps.
+
+1. Split the data into training and test sets.
+2. Choose a measure of model fit, e.g., $R^2$ or root-mean-square error ($rmse$).
+3. Fit each model to the training set.
+4. Calculate the measure of model fit on the *test* set.
+
+Here is an example using the `mtcars` data.
+
+```{r}
+rsq <- function(model, data, y) {
+  y <- data[[y]]
+  predict <- predict(model, newdata = data)
+  tss = sum((y - mean(y))^2)
+  rss = sum((y-predict)^2)
+  rsq_ = max(0, 1 - rss/tss)
+  return(rsq_)
+}
+
+mse<-function(model,data,y){
+  y<-data[[y]]
+  predict<-predict(model,newdata=data)
+  mse<-mean((y-predict)^2)
+  return(mse)
+}
+```
+
+Split the data into test and training sets.
+
+```{r}
+id.train <- sample(1:nrow(mtcars), floor(nrow(mtcars) * 0.5))
+mt.train <- mtcars[id.train, ]
+mt.test <- mtcars[-id.train, ]
+```
+
+Next, define a function to fit a model with given df and calculate
+R-square.
+
+```{r}
+model.performance <- function(df, train, test) {
+    mod <- lm(mpg ~ bs(disp, df = df), data = train)
+    c(train.r2 = rsq(mod, train, "mpg"),
+      test.r2 = rsq(mod, test, "mpg"))
+}
+```
+
+Finally, fit the model with varying parameters and calculate
+performance for each model
+
+```{r}
+dfs <- 2:6 ## parameters we want to iterate over
+
+## fit models using sapply. We could have used a for-loop instead.
+performance <- sapply(dfs, model.performance,
+                      train = mt.train,
+                      test = mt.test,
+                      simplify = FALSE)
+
+## arrange the result in a data.frame
+performance <- as.data.frame(do.call(rbind, performance))
+performance$df <- dfs
+
+performance
+```
+
+Usually it's a good idea to visualize model performance as a function
+of the varying parameter(s).
+
+```{r}
+library(ggplot2)
+
+ggplot(performance, aes(x = df)) +
+    geom_point(aes(y = train.r2, color = "train")) +
+    geom_point(aes(y = test.r2, color = "test"))
+```
+
+k-fold cross-validation
+-----------------------
+
+There is a serious limitation to using a single test/training split to
+perform cross validation. Would you get the same result with a
+different split? Because we don't want our results to depend on the
+random partitioning into test and training sets, it is a good idea to
+use multiple splits. This leads us to k-fold cross-validation. The
+basic steps are:
+
+1. Split the data into `k` paritions.
+2. Choose a measure of model fit, e.g., $R^2$ or $rmse$.
+3. For each partition, fit the model to the data excluding that partition.
+4. Calculate the measure of model fit on the excluded partition.
+4. Average the `k` measures of model fit.
+
+Here is an example, again using the `mtcars` data.
+
+Create `k=5` partitions.
+
+```{r}
+k <- 5
+
+mtcars$partition <- cut(sample(1:nrow(mtcars), nrow(mtcars)), 5) 
+```
+
+Fit the model with varying parameters and calculate
+performance for each model.
+
+```{r}
+dfs <- 2:6 ## parameters we want to iterate over
+
+## Use a for-loop to iterate over the partitions.
+## We could have used sapply instead
+performance <- vector(mode = "list", length = k)
+names(performance) <- unique(mtcars$partition)
+for(partition in names(performance)) {
+    ## Fit models using sapply. We could have used a for-loop instead.
+    test <- mtcars$partition == partition
+    performance[[partition]] <- sapply(dfs,
+                                       model.performance,
+                                       train = mtcars[!test, ],
+                                       test = mtcars[test, ],
+                                       simplify = FALSE)
+}
+
+## arrange the result in a list of data.frames
+performance <- sapply(performance, function(x) {
+    x <- as.data.frame(do.call(rbind, x))
+    x$df <- dfs
+    x},
+    simplify = FALSE)
+
+## add partition column
+for(partition in names(performance)) {
+    performance[[partition]] <- data.frame(performance[[partition]],
+                                           partition = partition)
+}
+
+## reduce list of data.frames to a single data.frame
+performance <- do.call(rbind, performance)
+
+performance
+```
+
+Usually it's a good idea to visualize model performance as a function
+of the varying parameter(s).
+
+```{r}
+library(ggplot2)
+
+ggplot(performance, aes(x = df)) +
+    geom_point(aes(y = train.r2, color = "train")) +
+    geom_point(aes(y = test.r2, color = "test"))
+
+for(dd in dfs){
+  print(dd)
+  print(c("Test R2",mean(performance$test.r2[performance$df==dd])))
+  print(c("Train R2",mean(performance$train.r2[performance$df==dd])))
+}
+```
+
+The `caret` package is a full-featured system for training
+regression and classification models. The `modelr` package is a
+light-weight alternative. A little touch to get the hang of, but go a
+
+
+
+Your turn: Use cross validation to determine the optimal degrees of freedom
+===========================================================================
+
+*Note*: You may use the convenience functions we wrote earlier, or
+write your own.
+
+1. Split the `mtcars` data into a test and training set.
+
+```{r}
+train <- sample(1:nrow(mtcars), floor(nrow(mtcars)/2))
+
+mt.train <- mtcars[train, ]
+mt.test <- mtcars[-train, ]
+```
+
+2. Iterate over `df` from 2-6, predicting `mpg` from `hp` and 'drat' using 
+   *natural splines* (`ns`). For each `df` combination calculate the $R^2$ value in
+   the test and training set.
+
+```{r}
+model.performance2 <- function(df, train, test) {
+    mod <- lm(mpg ~ ns(hp, df = df[1])+ns(drat,df=df[2]), data = train)
+    c(train.mse = mse(mod, train, "mpg"),
+      test.mse = mse(mod, test, "mpg"))
+}
+
+dfs <-expand.grid(1:6,1:6)
+names(dfs)<-c('df.hp','df.drat')
+
+ns.performance<- apply(dfs,1, model.performance2, 
+                         train = mt.train,
+                         test = mt.test) 
+  
+```
+
+3. Plot the $R^2$ values in the test and training set as a function of
+   `df` for`hp` and `wt`. What is the best `df` setting?
+```{r}
+plot.performance<-data.frame(dfs,t(ns.performance))
+
+ggplot(plot.performance,mapping = aes(x = df.hp,y=df.drat)) +
+  geom_point(aes(size = train.mse,
+                 color = train.mse)) 
+ggplot(plot.performance,mapping = aes(x = df.hp,y=df.drat)) +
+  geom_point(aes(size = test.mse,
+                 color = test.mse)) 
+
+plot.performance[which.min(plot.performance$test.mse),]
+  
+```
+
+4. Make sure that your solution is NOT on the boundary of your df grid. If it is, adjust your bounds to ensure that the global minimum of hte MSE is not on a boundary. 
+
+5. (Advanced) Repeat steps 1-3 several times. Do you get the same
+   answer with different train/test splits?
+   
+```{r}
+for(i in 1:10) {
+  train <- sample(1:nrow(mtcars), floor(nrow(mtcars)/2))
+  mt.train <- mtcars[train, ]
+  mt.test <- mtcars[-train, ]
+  print(sapply(dfs, model.performance, 
+               train = mt.train,
+               test = mt.test))
+}
+```
+
+   
+Smoothing models (loess, gam)
+===============================
+
+As flexible as the *transformation* mechanism described above is, it
+is limited. Other approaches to modeling non-linear functions include
+local polynomial regression (`loess`) and generalized additive models
+(`gam`). Rather than using standard (generalized) linear models with
+transformations on the right-hand-side, these models are best fit in R
+using specialized functions.
+
+Local polynomial regression works by fitting a polynomial weighted by
+distance from the point being predicted. The most important parameters
+are `span` and `degree`, which control the down-weighting of more
+distant points, and the degree of the polynomial, respectively.
+
+```{r}
+mod.mpg5 <- loess(mpg ~ disp, data = mtcars) # default span = 0.75
+mod.mpg6 <- loess(mpg ~ disp, span = 0.25, data = mtcars) # less smooth
+mod.mpg7 <- loess(mpg ~ disp, span = 2.0, data = mtcars) # more smooth
+
+ggplot(data = transform(mtcars, 
+                 pred.mpg5 = predict(mod.mpg5),
+                 pred.mpg6 = predict(mod.mpg6),
+                 pred.mpg7 = predict(mod.mpg7)),
+       mapping = aes(x = disp, y = mpg)) +
+  geom_point() +
+  geom_line(mapping = aes(y = pred.mpg5,color=0.75))+
+  geom_line(mapping = aes(y = pred.mpg6,color=0.25))+
+  geom_line(mapping = aes(y = pred.mpg7,color=2))
+```
+
+
+There are two popular implementations of generalized additive models
+in R, the older *gam* package, and the more recent *mgcv* package.
+*mgcv*. We'll use *gam* because it is somewhat simpler and easier to
+understand. 
+
+Calls go the `gam` function look much like calls to `lm` with
+transformations that we saw earlier:
+
+```{r}
+library(gam)
+mod.mpg8 <- gam(mpg ~ s(disp, spar = 0.1), data = mtcars)
+mod.mpg9 <- gam(mpg ~ s(disp, spar = 0.7), data = mtcars)
+mod.mpg10 <- gam(mpg ~ s(disp, spar = 1), data = mtcars)
+
+ggplot(data = transform(mtcars, 
+                 pred.mpg8 = predict(mod.mpg8),
+                 pred.mpg9 = predict(mod.mpg9),
+                 pred.mpg10 = predict(mod.mpg10)),
+       mapping = aes(x = disp, y = mpg)) +
+  geom_point() +
+  geom_line(mapping = aes(y = pred.mpg8,color=0.1))+
+  geom_line(mapping = aes(y = pred.mpg9,color=0.7))+
+  geom_line(mapping = aes(y = pred.mpg10,color=1))
+```
+Under the hood things are a bit different. The `s` function doesn't
+actually compute the smooth splines -- it just adds some attributes so
+that the `gam` function knows how to generate the model matrix. In
+other words the `s` function is *specific* to the *gam* package:
+`lm(mpg ~ s(disp, spar = 0.1), data = mtcars)` will not work.
+
+Your turn: Use cross validation to determine the optimal smoothing parameter for a GAM
+===========================================================================
+
+*Note* You may modify and use the `caret` functions we wrote
+earlier, or write your own.
+
+1. Split the `mtcars` data into a test and training set.
+
+```{r}
+train <- sample(1:nrow(mtcars), floor(nrow(mtcars)/2))
+mt.train <- mtcars[train, ]
+mt.test <- mtcars[-train, ]
+```
+
+
+2. Iterate over `spar` from 0.1 -- 0.8 (in increments of 0.1),
+   predicting `mpg` from `hp` using a *generalized additive model*
+   (`gam`). For each value of`spar` calculate the $R^2$ value in the
+   test and training set.
+
+```{r}
+library(gam)
+
+spars <- seq(0.1, 0.8, by = 0.1)
+
+## vectors to store results
+train.r2 <- c()
+test.r2 <- c()
+
+## iterate using a for-loop
+for(sp in spars) {
+  
+  ### YOU CODE WHAT GOES HERE
+  mod <- gam(mpg ~ s(hp, spar = sp), data = mt.train)
+  train.r2 <- c(train.r2, rsq(mod, mt.train, "mpg"))
+  test.r2 <- c(test.r2, rsq(mod, mt.test, "mpg"))
+}
+
+## arrange the data
+gam.r2 <- data.frame(spar = c(spars, spars),
+                     set = rep(c("train", "test"), each = length(spars)),
+                     r2 = c(train.r2, test.r2))
+
+```
+
+3. Plot the $R^2$ values in the test and training set as a function of
+   `spar`. What is the best `spar` setting?
+```{r}
+ggplot(gam.r2, mapping = aes(x = spar, y = r2, color = set)) +
+  geom_point() + 
+  geom_line()
+```
+4. (Advanced) Repeat steps 1-3 several times. Do you get the same
+   answer with different train/test splits?
+
+```{r}
+for(i in 1:10) {
+  train <- sample(1:nrow(mtcars), floor(nrow(mtcars)/2))
+  mt.train <- mtcars[train, ]
+  mt.test <- mtcars[-train, ]
+  train.r2 <- c()
+  test.r2 <- c()
+  cat("\nrepeat", i, ":\n")
+  for(sp in spars) {
+    mod <- gam(mpg ~ s(hp, spar = sp), data = mt.train)
+    train.r2 <- c(train.r2, rsq(mod, mt.train, "mpg"))
+    test.r2 <- c(test.r2, rsq(mod, mt.test, "mpg"))
+  }
+  print(cbind(spar = spars, train.r2 = train.r2, teset.r2 = test.r2))
+  
+}
+```
+
+5. (Advanced) Use 5-fold cross-validation to select the optimal `spar`
+   value.
+   
+```{r}
+## create k partitions
+mtcars$splits <- cut(sample(1:nrow(mtcars), 
+                            nrow(mtcars)), 
+                     breaks = 5, 
+                     labels = FALSE)
+
+## iterate over the splits, holding each one out as the test set.
+perform.5fold <- list()
+for(split in mtcars$splits) {
+  train <- mtcars$split == split
+  mt.train <- mtcars[train, ]
+  mt.test <- mtcars[-train, ]
+  
+  train.r2 <- c()
+  test.r2 <- c()
+  
+  for(sp in spars) {
+    mod <- gam(mpg ~ s(hp, spar = sp), data = mt.train)
+    train.r2 <- c(train.r2, rsq(mod, mt.train, "mpg"))
+    test.r2 <- c(test.r2, rsq(mod, mt.test, "mpg"))
+  }
+  
+  gam.r2 <- data.frame(spar = c(spars, spars),
+                       set = rep(c("train", "test"), each = length(spars)),
+                       r2 = c(train.r2, test.r2))
+  perform.5fold <- c(perform.5fold, list(gam.r2))
+}
+
+## collect the k sets of model statistics in a data.frame
+perform.5fold <- do.call(rbind, perform.5fold)
+
+## aggregate across the k sets, averaging model statistics for each df
+perform.5fold <- aggregate(perform.5fold$r2, perform.5fold[c("spar", "set")], FUN = mean)
+
+## plot the results
+ggplot(perform.5fold, aes(x = spar, y = x, color = set)) +
+  geom_point() +
+  geom_line() +
+  ylab(expression(R^2))
+```
+
+
+Lab Survey
+=============================
+
+Please fill this out at the end of lab each week. This will be anonymous and will NOT be used for attendance. At the end you will have the opporutnity to leave any unanswered questions. If enough people ask the same question I will post an answer in supplementary material. 
+
+https://goo.gl/forms/x04xd9P1HmNyU5gj1
