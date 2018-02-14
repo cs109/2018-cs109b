@@ -288,7 +288,7 @@ abline(h=1.2,lwd=2,col='red',lty=3)
 
 Next we implement `dbscan` using the epsilon determined above:
 ```{r}
-tweet.db<-dbscan(scale(tweet.num),eps=2)
+tweet.db<-dbscan(scale(tweet.num),eps=2,minPts = 8)
 fviz_cluster(tweet.db,data=scale(tweet.num),geom='point')
 
 table(tweet.db$cluster)
