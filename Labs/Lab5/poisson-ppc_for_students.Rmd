@@ -1,0 +1,222 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+```
+
+# load libraries and set bayesplot theme 
+# make sure you have these packages installed
+```{r load-packages, message=FALSE, warning=FALSE}
+library("rstan")
+library("ggplot2")
+library("bayesplot")
+
+theme_set(bayesplot::theme_default())
+```
+
+
+Load the count data into R by calling the "source" function on the file "count-data.R" that's provided in the lab materials. Create a variable called "N" that is equal to the number of observations in the count data. Print "N", the data "y", and create a histogram of "y". 
+```{r count-data, fig.width = 4, fig.height = 4, message=FALSE}
+# Loads vector of counts 'y'
+
+```
+
+We will now compare our data to draws from Poisson distribution with same mean. Calculate the mean of "y", then use the "rpois" function to draw "N" random samples from a Poisson with a lambda parameter equal to what you calculated. Then, plot the drawn data. 
+```{r plot-x, fig.width = 4, fig.height = 4, message=FALSE}
+# create Poisson draws and plot 
+
+```
+
+Create a dataframe titled "plotdata" that consists of both "y" and the sampled Poisson values "x". The dataframe should have two columns: one consisting of "y" and "x" concatenated together, and one consisting of a label representing whether that observation is from "Our data" or "Poisson data". After you create this dataframe, you should be able to visualize the data with the plot functions below. 
+```{r plot-y-x, message=FALSE}
+# create plotdata
+
+# Frequency polygons
+ggplot(plotdata, aes(x = value, color = variable)) + 
+  geom_freqpoly(binwidth = 0.5) +
+  scale_x_continuous(name = "", breaks = 0:max(x,y)) +
+  scale_color_manual(name = "", values = c("gray30", "purple"))
+
+# Side-by-side bar plots
+ggplot(plotdata, aes(x = value, fill = variable)) + 
+  geom_bar(position = "dodge") +
+  scale_x_continuous(name = "", breaks = 0:max(x,y)) +
+  scale_fill_manual(name = "", values = c("gray30", "purple"))
+```
+
+# Fit basic Poisson model
+
+Even though we already suspect it won't be a good model for this data, it's
+still a good idea to start by fitting the simplest Poisson model. From there we
+can then identify in which ways the model is inadequate.
+
+When using Stan, it's usally easiest to store your data in a list, such as the one provided below: 
+```{r create_list, fig.width = 4, fig.height = 4, message=FALSE}
+# create list 
+stan_list <- list()
+stan_list$Y <- y
+stan_list$N <- N
+```
+
+Try your best to fill out the skeleton Stan code provided below for a simple Poisson model with an exponential prior distribution on $/lambda$. 
+```{r stan_code, fig.width = 4, fig.height = 4, message=FALSE}
+# stan code 
+stan_code <- c("
+data {
+  // Number of observations
+  // your code here
+  // Count data (integer array)
+  // your code here 
+}
+
+parameters {
+  real<lower=0> lambda; // Poisson rate parameter 
+}
+
+model {
+  // Prior
+  // your code here
+
+  // Likelihood
+  // your code here 
+}
+
+generated quantities {
+  int y_rep[N];         // Draws from posterior predictive dist
+  for (n in 1:N) {
+    y_rep[n] = poisson_rng(lambda);
+  }
+}
+
+")
+```
+
+Run the cell below to fit the Poisson model. 
+```{r fit_model, fig.width = 4, fig.height = 4, message=FALSE}
+# fit the model 
+options(mc.cores = parallel::detectCores())
+fit <- stan(model_code = stan_code, 
+            data = stan_list, 
+            iter = 2000, 
+            chains = 4)
+```
+
+Use the "trace" plotfun to look at the trace plot of the MCMC sampler for $/lambda$. 
+```{r, plot_convergence}
+plot(fit, plotfun="trace", pars='lambda')
+```
+
+Look at posterior distribution of lambda
+```{r, plot_lambda}
+color_scheme_set("brightblue") # check out bayesplot::color_scheme_set
+lambda_draws <- as.matrix(fit, pars = "lambda")
+mcmc_areas(lambda_draws, prob = 0.95) # color 95% credible interval
+```
+
+Compare posterior of lambda to the mean of the data
+```{r, print_fit}
+means <- c("Posterior mean" = mean(lambda_draws), "Data mean" = mean(y))
+print(means, digits = 3)
+```
+
+The model gets the mean right, but, as we'll see next, the model is quite bad
+at predicting the outcome.
+
+# Graphical posterior predictive checks
+Extract `y_rep` draws from the fitted model object
+```{r y_rep}
+y_rep <- as.matrix(fit, pars = "y_rep")
+```
+
+Compare histogram of `y` to histograms of several `y_rep`s
+```{r ppc-hist, message=FALSE}
+ppc_hist(y, y_rep[1:8, ], binwidth = 1)
+```
+
+Compare density estimate of `y` to density estimates of a bunch of `y_rep`s
+```{r ppc-dens-overlay}
+ppc_dens_overlay(y, y_rep[1:50, ])
+```
+
+# Normal Model 
+clear environment and load normal data
+```{r load_normal_data}
+rm(list = ls())
+mydata <- read.csv("practice_data.csv")
+```
+
+Plot the data as before: 
+```{r examine_normal_data}
+X <- mydata$x
+N <- length(X)
+print(mean(X))
+qplot(X)
+```
+
+Generate fake normal data with the same empirical mean/standard deviation and plot it. 
+```{r fake_normal_data, fig.width = 4, fig.height = 4, message=FALSE}
+Y <- rnorm(N, mean=mean(X), sd=sd(X))
+qplot(Y)
+```
+
+Compare the two histograms side-by-side. 
+```{r normal_side_by_side, fig.width = 4, fig.height = 4, message=FALSE}
+plotdata <- data.frame(
+  value = c(X, Y), 
+  variable = rep(c("Our data", "Normal data"), each = N)
+)
+
+ggplot(plotdata, aes(x=value)) + 
+    geom_histogram(data=subset(plotdata, variable == 'Our data'),
+                   fill = "red", alpha = 0.25) +
+    geom_histogram(data=subset(plotdata, variable == 'Normal data'),
+                   fill = "blue", alpha = 0.25) 
+```
+
+Create a list for this data. 
+```{r create_normal_list, fig.width = 4, fig.height = 4, message=FALSE}
+# create list 
+stan_list <- list()
+stan_list$X <- X
+stan_list$N <- N
+```
+
+Try writing the code for the normal model yourself! 
+```{r normal_stan_code, fig.width = 4, fig.height = 4, message=FALSE}
+# stan code 
+stan_code <- c("
+data {
+  // write code here
+}
+
+parameters {
+ // write code here
+}
+
+model {
+ // write code here
+}
+
+generated quantities {
+ // (optional) write code here
+}
+
+")
+```
+
+Fit the normal model. 
+```{r fit_normal_model, fig.width = 4, fig.height = 4, message=FALSE}
+# fit the model 
+options(mc.cores = parallel::detectCores())
+fit <- stan(model_code = stan_code, 
+            data = stan_list, 
+            iter = 2000, 
+            chains = 4)
+```
+
+Play around with some of the same plots used on the Poisson data. Does this model seem to fit the data well? 
+
+
