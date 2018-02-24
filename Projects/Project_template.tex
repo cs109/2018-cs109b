@@ -1,0 +1,127 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{graphicx}
+%\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+%\usepackage{textcomp}
+\usepackage{pxfonts}
+\usepackage{enumerate,verbatim,cite}
+\usepackage[margin=1in]{geometry}
+%\usepackage{../../tex/pythonhighlight} %https://github.com/olivierverdier/python-latex-highlighting
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+%\addtolength{\headheight}{\baselineskip}
+\addtolength{\footskip}{\baselineskip}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhf{}
+\fancyfoot[L]{\textit{Last Modified: \today}}
+\fancyfoot[C]{\thepage}
+
+
+\usepackage[pdftex,bookmarks,hyperfigures,colorlinks
+						,urlcolor=blue
+						,citecolor=blue
+						,linkcolor=blue
+						,pdfstartview=FitH]{hyperref}
+
+
+%\usepackage{epsf}
+% \topmargin -0.5in \setlength{\textwidth}{6.in}
+% \setlength{\textheight}{8.5in}
+%\setlength{\evensidemargin}{0.25in}
+% \setlength{\oddsidemargin}{0.25in}
+\renewcommand{\r}{{\bf r}}
+\newcommand{\dery}{\frac{dx}{dt}}
+\renewcommand{\k}{{\bf k}}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+%\usepackage[usenames,dvipsnames]{xcolor}
+%\usepackage{hyperref}
+
+\newcommand{\myTitleBox}{
+\noindent\makebox[\linewidth][c]{%
+  %
+    \parbox{\paperwidth}{%
+      \hspace*{\dimexpr\hoffset+\oddsidemargin+1in\relax}%
+      \begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+      {\large\textbf{\courseTitleS}\courseTitle\hfill}\vspace{2mm}\\
+%      {\large\textbf{\topicsCoveredS}\topicsCovered\hfill}\vspace{2mm}\\
+      {\large\courseInstructors\hfill}\vspace{2mm}\\
+%      \secAuthor\hfill\sectionTimesV\\
+%      \authorContact\hfill\sectionTime\\
+      \end{minipage}
+    %
+  }%
+}
+}
+
+
+\newcommand{\courseTitleS}{CS109B/STAT121B/APCOMP209a/CSCI109B}
+\newcommand{\courseTitle}{ Advanced Topics in Data Science}
+\newcommand{\courseInstructors}{\textbf{Instructors:} Mark Glickman, Pavlos Protopapas}
+%\newcommand{\sectionTimesV}{Section Times}
+%\newcommand{\sectionTime}{ Wed 3-4pm \& Wed 5:30-6:30 \& Thurs 2:30-3:30}
+%\newcommand{\topicsCoveredS}{Advanced Section 6:}
+%\newcommand{\topicsCovered}{ Topics in Supervised Classification}
+%\newcommand{\authorContact}{nhoernle@g.harvard.edu}
+%\newcommand{\secAuthor}{Nick Hoernle}
+\newcommand{\emptyS}{ }
+
+%\title{\textbf{CS 109A Final Project} \\ \bigskip \large{Urban Crime Prediction}}
+\date{}
+
+\begin{document}
+%\myTitleBox
+
+\noindent {\small{\sc{CS 109B/Stat 121B/AC 209B/CSCI 109B: Final Project} \hfill \\ \small{\sc{Glickman, Protopapas}} \hfill \\ }
+\begin{center}
+\section*{XXX Project Title goes here}
+\end{center}
+
+%\maketitle
+
+\subsection*{Problem statement}
+\noindent XXX Paragraph 1. \\
+
+\noindent XXX Paragraph 2. \\
+
+\noindent XXX Paragraph 3. \\
+
+\noindent \textbf{Project goal:} XXX specific project goal goes here
+
+\subsection*{Data Recources}
+\noindent  XXX Title of data source 1.
+
+\begin{enumerate}
+\item \textbf{XXX Data Source 1}\\
+Description of data source 1.
+\begin{itemize}
+\item[-] feature set 1
+\item[-] feature set 2
+\item[-] feature set 3
+\end{itemize}
+\item \textbf{XXX Data source 2}
+\begin{itemize}
+\item[-] feature set 1
+\item[-] feature set 2
+\item[-] feature set 3
+\end{itemize}
+\end{enumerate}
+\subsection*{High-level project goals}
+\begin{enumerate}
+\item Project goal 1
+\item Project goal 2
+\item Project goal 3
+\end{enumerate}
+
+\subsection*{References}
+\begin{enumerate}
+\item reference 1
+\item reference 2 
+\end{enumerate}
+
+
+\end{document}  
