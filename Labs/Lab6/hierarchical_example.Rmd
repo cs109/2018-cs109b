@@ -1,0 +1,207 @@
+---
+title: 'CS109B Lab 6: Hierarchical Model Review'
+output:
+  html_document:
+    highlight: tango
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+Hierarchical Model Review
+=============================
+Without hierarchical modeling we have two options:
+
+* For each subject, fit seperate least-squares regression
+
+* Pool all the data together and fit a single least-squares regression.
+
+Hierarchical modeling allows us to do something in between these two option. We aknowledge that the relationship between x and y may differ within seperate groups, but since we are looking at the same sample we must take into account that there is some similarity between groups. Also we are able to use the entire dataset, instead of splitting it up. 
+
+In hierarchical regression, we allow slope and/or intercept parameters to have different values, but we assume they come from the *same distribution*. 
+
+
+Hierarchical Model Example
+=============================
+
+Download dataset (credit Brian Junker Carnegie Mellon University). 
+
+The student dependent varaibles are:
+
+* Gender (0=female, 1=male)
+
+* VR = verbal reasoning level (high/medium/low)
+
+* LRT = London Reading Test (beginning of the year)
+
+* Y = end-of-year test
+
+The school dependent variables are:
+
+* school.gender (all.boy, all.girl, mixed)
+
+* school.denom ( other, cofE, RomCath, State)
+
+We are interested in predicting the students end of the year test besed on the LRT. 
+
+```{r}
+#download.file('http://www.stat.cmu.edu/~brian/463-663/week07/school-frame.txt',destfile='school.txt')
+school<-read.table('school.txt')
+dim(school)
+head(school)
+```
+
+Let's take a look at the relationship between LRT and Y:
+```{r}
+library(ggplot2)
+ggplot(school,aes(x=LRT,y=Y))+
+  geom_point()
+```
+Now let's look at this relationship seperately for each school. You can image the realationship between the beginning of the year exam and the end of the year exam may differ per school.  
+```{r}
+# only look at 16 counties
+school.16<-school[school$school%in%c(1:16),]
+
+ggplot(school.16,
+       aes(x=LRT,y=Y))+
+  geom_point()+
+  facet_wrap(~school,ncol=4)
+```
+We will fit this data in three ways. In each case we will only look at LRT as a predictor. 
+
+
+Pooled Regression
+------------------
+For each subject, fit seperate least-squares regression predicting the end-of-the year exam Y from the LRT.
+
+```{r}
+school.lm<-lm(Y~LRT,data=school)
+
+ggplot(school.16,
+       aes(x=LRT,y=Y))+
+  geom_point()+
+  geom_abline(intercept=school.lm$coefficients[1],slope=school.lm$coefficients[2],color='darkcyan')+
+  facet_wrap(~school,ncol=4)
+
+```
+
+Unpooled Regression
+------------------
+```{r}
+school.unpooled.coef<-array(0,dim=c(nrow(school),2))
+for(ss in 1:length(unique(school$school))){
+  school.ss<-school[school$school==ss,]
+  school.lm.ss<-lm(Y~LRT,data=school.ss)
+  school.unpooled.coef[ss,]<-school.lm.ss$coeff
+}
+
+ggplot(school.16,
+       aes(x=LRT,y=Y))+
+  geom_point()+
+  geom_abline(intercept=school.lm$coefficients[1],slope=school.lm$coefficients[2],color='darkcyan')+
+  geom_smooth(method='lm',se=F,color='goldenrod3',lwd=1)+
+  facet_wrap(~school,ncol=4)
+
+```
+
+Hierarchical Regression
+------------------
+Allow the intercept and the LRT coefficient to vary per school. In simple linear regression, we assume that the response is normally distributed. We will execute the following model in stan:
+$$ Y_i \sim N(\beta_{0i} + \beta_{1i} \times \mbox{LRT}_{i}, \sigma)$$
+$$ \beta_{0i} \sim N(0,\omega_0)$$
+$$ \beta_{1i} \sim N(0,\omega_1)$$
+$$ \sigma \sim \mbox{Unif}(0,100) \; ; \; \omega_0 \sim \mbox{Unif}(0,100)  \; ; \; \omega_1 \sim \mbox{Unif}(0,100)$$
+
+First we will create this model in Stan:
+```{r}
+# data{
+#   int N;
+#   real Y[N];
+#   real LRT[N];
+# }
+# 
+# parameters{
+#   real<lower=0> sigma;
+#   real<lower=0> omega0;
+#   real<lower=0> omega1;
+#   real beta0[N];
+#   real beta1[N];
+# 
+# }
+# 
+# transformed parameters{
+#   real mu[N];
+#   
+#   for(ii in 1:N){
+#     mu[ii] = beta0[ii]+ LRT[ii]*beta1[ii];
+#   }
+# }
+# 
+# model{
+#   
+#   Y~normal(mu,sigma);
+#   
+#   beta0~normal(0,omega0);
+#   beta1~normal(0,omega1);
+#   
+#   sigma~uniform(0,100);
+#   omega0~uniform(0,100);
+#   omega1~uniform(0,100);
+#   
+# }
+
+```
+
+Now let's run the model in Stan:
+```{r}
+library(rstan)
+
+school.data<-list()
+school.data$LRT<- school$LRT
+school.data$school<-school$school
+school.data$Y<-school$Y
+school.data$N<-nrow(school)
+school.data$Nschool<-length(unique(school$school))
+
+school.fit<-stan(file='hierarchical.stan',
+                 data=school.data,
+                 iter=2000,
+                 refresh=0,
+                 chain=2,
+                 seed=109)
+```
+
+Now let's see if our Stan model converged.
+```{r}
+plot(school.fit,plotfun='trace',pars=c('sigma','omega0','omega1'))
+
+plot(school.fit,plotfun='trace',pars=c('beta0[1]','beta0[16]','beta0[38]','beta1[1]','beta1[16]','beta1[38]'))
+
+
+# R Statistic
+school.fit.summary<-summary(school.fit)
+school.fit.summary$summary[1:79,'Rhat']
+```
+Finally, let's compare it to the pooled and unpooled regressions. 
+```{r}
+school.extract<-rstan::extract(school.fit)
+
+beta0.hat<-apply(school.extract$beta0,2,mean)
+beta1.hat<-apply(school.extract$beta1,2,mean)
+beta.hat<-data.frame(beta0=beta0.hat[1:16],beta1=beta1.hat[1:16],school=1:16)
+
+ggplot(school.16,
+       aes(x=LRT,y=Y))+
+  geom_point()+
+  geom_abline(intercept=school.lm$coefficients[1],slope=school.lm$coefficients[2],color='darkcyan')+
+  geom_smooth(method='lm',se=F,color='goldenrod3',lwd=1)+
+  geom_abline(data=beta.hat,
+              aes(intercept=beta0,slope=beta1),color='indianred3')+
+  facet_wrap(~school,ncol=4)
+
+```
+
+Notice that the line created via the posterior mean of the betas lies somewhere in between the completely pooled and completely unpooled estimates, which is what we expect!
+
