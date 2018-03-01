@@ -109,25 +109,27 @@ ggplot(school.16,
 Hierarchical Regression
 ------------------
 Allow the intercept and the LRT coefficient to vary per school. In simple linear regression, we assume that the response is normally distributed. We will execute the following model in stan:
-$$ Y_i \sim N(\beta_{0i} + \beta_{1i} \times \mbox{LRT}_{i}, \sigma)$$
-$$ \beta_{0i} \sim N(0,\omega_0)$$
-$$ \beta_{1i} \sim N(0,\omega_1)$$
+$$ Y_i \sim N(\beta_{0j[i]} + \beta_{1j[i]} \times \mbox{LRT}_{i}, \sigma)$$
+$$ \beta_{0j} \sim N(0,\omega_0)$$
+$$ \beta_{1j} \sim N(0,\omega_1)$$
 $$ \sigma \sim \mbox{Unif}(0,100) \; ; \; \omega_0 \sim \mbox{Unif}(0,100)  \; ; \; \omega_1 \sim \mbox{Unif}(0,100)$$
 
 First we will create this model in Stan:
 ```{r}
 # data{
 #   int N;
+#   int Nschool;
 #   real Y[N];
 #   real LRT[N];
+#   int school[N];
 # }
 # 
 # parameters{
 #   real<lower=0> sigma;
 #   real<lower=0> omega0;
 #   real<lower=0> omega1;
-#   real beta0[N];
-#   real beta1[N];
+#   real beta0[Nschool];
+#   real beta1[Nschool];
 # 
 # }
 # 
@@ -135,7 +137,7 @@ First we will create this model in Stan:
 #   real mu[N];
 #   
 #   for(ii in 1:N){
-#     mu[ii] = beta0[ii]+ LRT[ii]*beta1[ii];
+#     mu[ii] = beta0[school[ii]]+ LRT[ii]*beta1[school[ii]];
 #   }
 # }
 # 
