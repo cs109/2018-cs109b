@@ -1,4 +1,4 @@
-# CS109b - Spring 2018 Edition
+#hello CS109b - Spring 2018 Edition
 ## Public Repository 
 #### A link to this repository is made available to students via Canvas
 
