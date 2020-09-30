@@ -2,7 +2,7 @@
 ## Public Repository 
 #### A link to this repository is made available to students via Canvas
 
-This is the public repository for Harvard CS109b used to hold all course related material. Material is organized as follows:
+This is the public repository for Harvard CS109b used to hold all course related materials. Materials are organized as follows:
 - Lectures/ holds lecture notes in pdf, R code, python notebooks, or other relevant material
 - Labs/ holds lab material
 - A-Sections/ holds material relevant to the Advanced sections
